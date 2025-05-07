@@ -8,7 +8,7 @@
 
 本仓库以 Parameter 为例，其他对象类似。
 
-[motion_interploate.py](./motion_interpolate.py)：实现插值函数，并进行动画播放。
+[motion_interploate.py](./motion_interpolate.py)：实现插值函数，读取 `motion3.json` 文件并播放动画。
 
 按空格键播放动画：
 
@@ -20,6 +20,6 @@
 
 ![曲线](./docs/Snipaste_2025-04-22_17-27-40.png)
 
-无需建模工程文件即可生成 `motion3.json` 的动作编辑器：
+[Main.py](./Main.py): 无需建模工程文件即可生成 `motion3.json` 的动作编辑器
 
 ![编辑器](./docs/2025-04-25%2011-46-16%2000_00_04-00_00_09.gif)

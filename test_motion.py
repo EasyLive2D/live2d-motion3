@@ -16,7 +16,7 @@ model.CreateRenderer(2)
 started = False
 lastCt = time.time()
 
-model.LoadExtraMotion("extra", 0, "魅魔喵.motion3.json")
+model.LoadExtraMotion("extra", 0, "monv.motion3.json")
 
 while True:
     for event in pygame.event.get():

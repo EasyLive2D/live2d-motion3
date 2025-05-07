@@ -87,10 +87,13 @@ def segments2curves(segments: list[float]) -> list[tuple[float, float]]:
 
 if __name__ == "__main__":
     import json
-    motion = json.load(open("Mao/motions/"
-                            # "mtn_01.motion3.json"
-                            "special_01.motion3.json"
-                             ))
+    motion = json.load(open(
+        # "Mao/motions/"
+        # "mtn_01.motion3.json"
+        # "special_01.motion3.json"
+        # "monv.motion3.json"
+        "test.motion3.json"
+    ))
     import matplotlib.pyplot as plt
     for curve in motion["Curves"]:
         # print(curve["Id"])
