@@ -20,6 +20,20 @@
 
 ![曲线](./docs/Snipaste_2025-04-22_17-27-40.png)
 
-[Main.py](./Main.py): 无需建模工程文件即可生成 `motion3.json` 的动作编辑器
+[Main.py](./Main.py): motion3 动作编辑器
+
+- **新建**：选择模型文件，创建空白动作
+- **打开**：选择模型 + 已有 `.motion3.json` 文件，加载并编辑
+- **保存**：导出为 `.motion3.json`
+
+曲线编辑支持直线、三次贝塞尔、前后键水平插值四种段类型，可调节帧率和总帧数。
 
 ![编辑器](./docs/2025-04-25%2011-46-16%2000_00_04-00_00_09.gif)
+
+## 依赖
+
+- Python 3.10+
+- PySide6 — GUI 框架
+- live2d-py — Live2D 渲染
+- matplotlib — 曲线可视化（仅 motion_visualize.py）
+- pygame — 动画测试（仅 test_motion.py）
