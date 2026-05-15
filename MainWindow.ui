@@ -53,6 +53,7 @@
      <string>文件</string>
     </property>
     <addaction name="actionNew"/>
+    <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
    </widget>
    <addaction name="menu"/>
@@ -63,14 +64,14 @@
     <string>新建</string>
    </property>
   </action>
-  <action name="actionOpen">
-   <property name="text">
-    <string>打开</string>
-   </property>
-  </action>
   <action name="actionSave">
    <property name="text">
     <string>保存</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="text">
+    <string>打开</string>
    </property>
   </action>
  </widget>

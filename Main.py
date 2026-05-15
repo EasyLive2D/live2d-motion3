@@ -10,7 +10,7 @@ from MainWindow import MainWindow
 
 
 def main():
-    live2d.setLogEnable(False)
+    live2d.enableLog(False)
 
     live2d.init()
 

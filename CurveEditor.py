@@ -63,6 +63,9 @@ class CurveEditor(QWidget):
     def getNumFrames(self, x):
         return (x - self.origin[0]) / self.scale
 
+    def timeToScreenX(self, t_seconds):
+        return t_seconds * self.fps * self.scale + self.origin[0]
+
     def setNoInterpolate(self, noInterpolate: bool):
         self.noInterpolate = noInterpolate
 
@@ -132,6 +135,20 @@ class CurveEditor(QWidget):
     
     def percentOfY(self, y):
         return (y - self.origin[1]) / self.chartSize[1]
+
+    def valueToScreenY(self, value, min_val, max_val):
+        v_range = max_val - min_val if max_val != min_val else 1.0
+        normalized = (value - min_val) / v_range
+        return normalized * self.chartSize[1] + self.origin[1]
+
+    @staticmethod
+    def format_time(num_frames, fps):
+        total_frames = int(round(num_frames))
+        total_seconds = total_frames // fps
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+        frames = total_frames % fps
+        return "%02d:%02d:%02d" % (minutes, seconds, frames)
 
     def _changeValue(self):
         if self.clickedX < self.origin[0] or self.clickedX > self.origin[0] + self.chartSize[0]:
@@ -395,11 +412,8 @@ class CurveEditor(QWidget):
     
     def show_coordinate(self, point: QPoint, x, y):
         num_frames = (x - self.origin[0]) / self.scale
-        secs = num_frames // self.fps
-        minutes = (num_frames - secs * self.fps) // self.fps * self.fps
-        frames = num_frames % self.fps 
         value = self._y2value(y)
-        QToolTip.showText(point, "%s\n%02d:%02d:%02d, %.2f" % (self.targetId, minutes, secs, frames, value))
+        QToolTip.showText(point, "%s\n%s, %.2f" % (self.targetId, self.format_time(num_frames, self.fps), value))
 
     def mouseMoveEvent(self, event: QMouseEvent):
         x, y = event.pos().x(), event.pos().y()

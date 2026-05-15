@@ -6,15 +6,19 @@ from ui_MotionDesigner import Ui_MotionDesigner
 import os
 import json
 import live2d.v3 as live2d
-from motion_interpolate import Curve, get_segment_type
+from motion_interpolate import Curve, get_segment_type, Motion, BezierSegment
 
+
+from typing import Optional
 
 class MotionDesigner(QWidget):
 
-    def __init__(self, model_path=None, parent=None):
+    def __init__(self, model_path=None, motion: Optional[Motion] = None, parent=None):
         super().__init__(parent)
         self.ui = Ui_MotionDesigner()
         self.ui.setupUi(self)
+
+        self.motion = motion
 
         self.ui.splitter.setStretchFactor(0, 1)
         # self.ui.splitter.setStretchFactor(1, 1)
@@ -23,7 +27,7 @@ class MotionDesigner(QWidget):
 
         self.ui.live2DScene.setModelPath(model_path)
 
-        self.model: None | live2d.Model = None
+        self.model: Optional[live2d.Model] = None
         self.paramIds = []
         self.paramCurves = []
         self.cdi: None | dict = None
@@ -66,7 +70,6 @@ class MotionDesigner(QWidget):
         self.ui.paramTable.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
 
         self.ui.mixPlayCheckBox.checkStateChanged.connect(lambda v: self.ui.curveEditor.setNoInterpolate(v == Qt.CheckState.Checked))
-    
 
     def _on_fps_spin_box_value_changed(self, value):
         self.ui.curveEditor.setFps(value)
@@ -79,6 +82,34 @@ class MotionDesigner(QWidget):
         self.paramCurves = [Curve.create(p, []) for p in self.paramIds]
         self._load_cdi()
         self._init_param_table()
+        if self.motion:
+            self._apply_loaded_motion()
+
+    def _apply_loaded_motion(self):
+        if not self.motion:
+            return
+        fps = self.motion.fps
+        self.ui.fpsSpinBox.setValue(fps)
+        frame_count = int(self.motion.duration * fps)
+        self.ui.frameCount.setValue(frame_count)
+
+        for i, curve in enumerate(self.paramCurves):
+            if not curve.segments:
+                continue
+            min_v = self.model.GetParameterMinimumValue(i)
+            max_v = self.model.GetParameterMaximumValue(i)
+            for seg in curve.segments:
+                sp = seg.getStartPoint()
+                sp.t = self.ui.curveEditor.timeToScreenX(sp.t)
+                sp.value = self.ui.curveEditor.valueToScreenY(sp.value, min_v, max_v)
+                ep = seg.getEndPoint()
+                ep.t = self.ui.curveEditor.timeToScreenX(ep.t)
+                ep.value = self.ui.curveEditor.valueToScreenY(ep.value, min_v, max_v)
+                if isinstance(seg, BezierSegment):
+                    seg.p1.t = self.ui.curveEditor.timeToScreenX(seg.p1.t)
+                    seg.p1.value = self.ui.curveEditor.valueToScreenY(seg.p1.value, min_v, max_v)
+                    seg.p2.t = self.ui.curveEditor.timeToScreenX(seg.p2.t)
+                    seg.p2.value = self.ui.curveEditor.valueToScreenY(seg.p2.value, min_v, max_v)
 
     def _load_cdi(self):
         files = os.listdir(self.model.GetModelHomeDir())
@@ -90,11 +121,12 @@ class MotionDesigner(QWidget):
                 
     def _init_param_table(self):
         self.ui.paramTable.setRowCount(len(self.paramIds))
+        curve_by_param_id = {c.paramId: c for c in self.motion.curves} if self.motion else {}
         for i, p in enumerate(self.paramIds):
             check_box = QCheckBox()
             self.ui.paramTable.setCellWidget(i, 0, check_box)
             check_box.checkStateChanged.connect(lambda state, i=i: self._on_param_check_box_state_changed(state, i))
-        
+
             self.ui.paramTable.setItem(i, 1, QTableWidgetItem(p))
             self.ui.paramTable.setItem(i, 2, QTableWidgetItem(str(self.cdi['Parameters'][i]['Name'])))
             value_item = QTableWidgetItem("%.2f" % self.model.GetParameterDefaultValue(i))
@@ -109,6 +141,10 @@ class MotionDesigner(QWidget):
             value_slider.setValue(int((value - minValue) / (maxValue - minValue) * 100.0))
             value_slider.valueChanged.connect(lambda value, i=i: self._on_value_slider_changed(value, i ))
 
+            if p in curve_by_param_id:
+                self.paramCurves[i] = curve_by_param_id[p]
+                check_box.setChecked(True)
+                    
     def _on_value_slider_changed(self, value, i):
         min_value = self.model.GetParameterMinimumValue(i)
         max_value = self.model.GetParameterMaximumValue(i)
@@ -155,10 +191,7 @@ class MotionDesigner(QWidget):
                 self.ui.live2DScene.paramValues[self.currentParamIndex] = value
 
         fps = self.ui.curveEditor.fps
-        secs = num_frames // fps
-        minutes = (num_frames - secs * fps) // fps * fps
-        frames = num_frames % fps 
-        self.ui.currentTLabel.setText("%02d:%02d:%02d" % (minutes, secs, frames))
+        self.ui.currentTLabel.setText(self.ui.curveEditor.format_time(num_frames, fps))
 
     def _update_all_used_params(self):
         t = self.ui.curveEditor.getT()

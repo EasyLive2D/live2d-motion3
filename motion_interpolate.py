@@ -37,6 +37,8 @@ class Segment(ABC):
     @abstractmethod
     def setEndPoint(self, p: Point): pass
 
+    @abstractmethod
+    def get_all_points(self) -> list[Point]: pass
 
 
 class LinearSegment(Segment):
@@ -56,6 +58,9 @@ class LinearSegment(Segment):
 
     def setEndPoint(self, p: Point):
         self.p1 = p
+
+    def get_all_points(self) -> list[Point]:
+        return [self.p0, self.p1]
 
     def interpolate(self, t: float) -> float:
         return self.p0.value + (self.p1.value - self.p0.value) * (t - self.p0.t) / (self.p1.t - self.p0.t)
@@ -83,7 +88,10 @@ class BezierSegment(Segment):
 
     def setEndPoint(self, p: Point):
         self.p3 = p
-        
+
+    def get_all_points(self) -> list[Point]:
+        return [self.p0, self.p1, self.p2, self.p3]
+
     def interpolate(self, t):
         tt = self.__solve_tt(t)
         return self.__interpolate_value(tt)
@@ -141,6 +149,9 @@ class SteppedSegment(Segment):
     def setEndPoint(self, p: Point):
         self.p1 = p
 
+    def get_all_points(self) -> list[Point]:
+        return [self.p0, self.p1]
+
     def interpolate(self, t):
         return self.p0.value if t < self.p0.t else self.p1.value
     
@@ -153,18 +164,21 @@ class InverseSteppedSegment(Segment):
     def __init__(self, p0: Point, p1: Point):
         self.p0 = p0
         self.p1 = p1
-    
+
     def getEndPoint(self) -> Point:
         return self.p1
-    
+
     def getStartPoint(self) -> Point:
         return self.p0
-    
+
     def setStartPoint(self, p: Point):
         self.p0 = p
 
     def setEndPoint(self, p: Point):
         self.p1 = p
+
+    def get_all_points(self) -> list[Point]:
+        return [self.p0, self.p1]
 
     def interpolate(self, t):
         return self.p1.value
@@ -212,23 +226,13 @@ class Curve:
             "Segments": []
         }
         for i, seg in enumerate(self.segments):
+            points = seg.get_all_points()
             if i == 0:
-                data["Segments"].extend([map_t(seg.getStartPoint().t), map_value(seg.getEndPoint().value)])
+                data["Segments"].extend([map_t(points[0].t), map_value(points[0].value)])
             t = get_segment_type(seg)
-            if t == 1:
-                data["Segments"].extend([t, 
-                                         map_t(seg.p1.t), 
-                                         map_value(seg.p1.value),
-                                         map_t(seg.p2.t),
-                                         map_value(seg.p2.value),
-                                         map_t(seg.p3.t),
-                                         map_value(seg.p3.value),
-                                         ])
-            else:
-                data["Segments"].extend([t, 
-                                         map_t(seg.p1.t), 
-                                         map_value(seg.p1.value),
-                                         ])
+            data["Segments"].append(t)
+            for p in points[1:]:
+                data["Segments"].extend([map_t(p.t), map_value(p.value)])
         return data
 
     @staticmethod
@@ -285,6 +289,7 @@ class Motion:
         self.curves: list[Curve] = []
         self.timeElapsed = 0
         self.duration = 0
+        self.fps = 30
         self.started = False
 
     @staticmethod
@@ -297,6 +302,7 @@ class Motion:
                 curve = Curve.create(curveData["Id"], curveData["Segments"])
                 curves.append(curve)
         motion.duration = data['Meta']["Duration"]
+        motion.fps = data['Meta'].get("Fps", 30)
         return motion
     
     def update(self, delta: float, model: 'live2d.Model'):
@@ -338,7 +344,7 @@ if __name__ == "__main__":
     started = False
     lastCt = time.time()
 
-    motion = Motion.create("Mao/motions/special_01.motion3.json")
+    motion = Motion.create("Mao.motion3.json")
 
     while True:
         for event in pygame.event.get():

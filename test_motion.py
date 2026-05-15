@@ -8,7 +8,10 @@ live2d.init()
 pygame.display.set_mode((800, 600), pygame.DOUBLEBUF | pygame.OPENGL)
 live2d.glInit()
 model = live2d.Model()
-model.LoadModelJson("Mao/Mao.model3.json")
+model.LoadModelJson(
+    # "Mao/Mao.model3.json"
+    "Resources/魅魔喵/meimo1.model3.json"
+)
 model.Resize(800, 600)
 
 model.CreateRenderer(2)
@@ -16,7 +19,7 @@ model.CreateRenderer(2)
 started = False
 lastCt = time.time()
 
-model.LoadExtraMotion("extra", 0, "monv.motion3.json")
+model.LoadExtraMotion("extra", 0, "1.motion3.json")
 
 while True:
     for event in pygame.event.get():

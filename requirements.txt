@@ -1,3 +1,4 @@
 live2d-py
 pygame
 matplotlib
+PySide6
